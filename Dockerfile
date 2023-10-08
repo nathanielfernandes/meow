@@ -31,8 +31,8 @@ RUN cargo build --release
 FROM gcr.io/distroless/cc
 
 # copy the build artifact from the build stage
-COPY --from=build /pixl/target/release/meow .
-COPY --from=build /pixl/assets ./assets
+COPY --from=build /meow/target/release/meow .
+COPY --from=build /meow/assets ./assets
 
 # set the startup command to run your binary
 CMD ["./meow"]
