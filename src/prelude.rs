@@ -65,12 +65,15 @@ if attachment {
     let s = 256
     let z = h - s - bottom_lip
     @DrawRoundedRectangle(10, z, w - 20, s, 5)
-    @Clip()
+    @ClipPreserve()
     
     @SetFilter("good")
     let img = @Blur(image, 20.0)
     @DrawImageCovered(img, 0, z, w, s)
     
+    @SetColor(#00000056)
+    @Fill()
+
     @ResetClip()
     @DrawImageContained(image, 10, z, w - 20, s)
 }
