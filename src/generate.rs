@@ -13,6 +13,7 @@ pub fn render_text(
     signed: Option<&str>,
     identifier: &str,
     font: &str,
+    attach: Option<RgbaImage>,
 ) -> Option<RgbaImage> {
     let (text, emojis) = imagetext::emoji::parse::parse_out_emojis(&text, true, true);
 
@@ -28,13 +29,17 @@ pub fn render_text(
         imagetext::measure::text_width_with_emojis,
     );
 
-    let (w, h) = parsed_text_size_multiline_with_emojis(&lines, &font, s, 1.0);
+    let (mut w, mut h) = parsed_text_size_multiline_with_emojis(&lines, &font, s, 1.0);
 
-    let w = w.max(256) + 50;
-    let h = h + 50 + 20;
+    w = w.max(256) + 50;
+    h = h + 50 + 20;
 
     if h < 30 {
         return None;
+    }
+
+    if attach.is_some() {
+        h += 256;
     }
 
     let mut img = RgbaImage::new(w as u32, h as u32);
@@ -43,7 +48,13 @@ pub fn render_text(
         return None;
     };
 
-    if let Err(_) = canvas.run() {
+    canvas.add_variable("attachment", attach.is_some());
+    if let Some(attach) = &attach {
+        canvas.add_image("image", attach);
+    }
+
+    if let Err(e) = canvas.run() {
+        error!("Failed to run canvas: {}", e.0);
         return None;
     }
 
@@ -124,6 +135,13 @@ pub fn attachment(img: &RgbaImage) -> Result<serenity::AttachmentType, CharmErro
         data: Cow::Owned(buf),
         filename: "meow.png".to_string(),
     })
+}
+
+pub async fn attachment_to_image(attachment: &Option<serenity::Attachment>) -> Option<RgbaImage> {
+    let attachment = attachment.as_ref()?;
+    let file = attachment.download().await.ok()?;
+    let img = image::load_from_memory(&file).ok()?.to_rgba8();
+    Some(img)
 }
 
 static EMOJIS: [char; 16] = [

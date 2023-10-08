@@ -26,7 +26,7 @@ pub async fn reply(
 
     let identifier = random_identifier(5);
 
-    let Some(img) = render_text(&data.reply, None, &identifier, "ggsans-bold") else {
+    let Some(img) = render_text(&data.reply, None, &identifier, "ggsans-bold", None) else {
         return Ok(());
     };
 
@@ -45,7 +45,7 @@ pub async fn reply(
 pub async fn meow(
     ctx: Context<'_>,
     #[description = "message"] message: String,
-    // #[description = "image"] file: Option<serenity::Attachment>,
+    #[description = "image"] image: Option<serenity::Attachment>,
     #[description = "anonymous"] anonymous: Option<bool>,
     #[description = "font name"] font: Option<Font>,
 ) -> CommandResult {
@@ -65,11 +65,14 @@ pub async fn meow(
     };
 
     let identifier = random_identifier(5);
+
+    let attach = attachment_to_image(&image).await;
     let img = render_text(
         &message,
         signed,
         &identifier,
         font.unwrap_or(Font::Discord).str(),
+        attach,
     )
     .ok_or(CharmError::MeowError("Failed to render text".to_string()))?;
 
