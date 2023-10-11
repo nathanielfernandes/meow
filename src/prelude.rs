@@ -9,6 +9,8 @@ pub use poise;
 pub use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::ChannelId;
 
+use crate::appstate::AppState;
+
 #[derive(Debug, thiserror::Error)]
 pub enum CharmError {
     #[error("<Serenity: {0}>")]
@@ -18,7 +20,7 @@ pub enum CharmError {
     MeowError(String),
 }
 
-pub type Data = ();
+pub type Data = &'static AppState;
 
 pub type CommandResult = Result<(), CharmError>;
 pub type Context<'a> = poise::Context<'a, Data, CharmError>;
@@ -53,12 +55,41 @@ const MEOW: &'static str = r#"
 let w, h = @Dimensions()
 let bottom_lip = 26
 
+let bgcolor = #1f1f1f
+let fgcolor = #2e2e2e
+
+if sentiment > 0.9 {
+    bgcolor = #700101
+    fgcolor = #b00b0b
+}
+
+let w, h = @Dimensions()
+let bottom_lip = 26
+
 @DrawRoundedRectangle(0,0 * 2, w, h, 10)
-@SetColor(#1f1f1f)
+@SetColor(bgcolor)
 @Fill()
 
 @DrawRoundedRectangle(5, 5, w - 10, h - bottom_lip, 5)
-@SetColor(#2e2e2e)
+@SetColor(fgcolor)
+@Fill()
+
+
+let bw, bh = (100, 10)
+let bx, by = (w - bw - 20, h - bh - 6)
+@DrawRoundedRectangle(bx, by, bw, bh, bh)
+
+@SetLinearGradient((bx, by), (bx + bw, by + bh), "pad", [
+    (0.0, #3bb0ff),
+    (0.2, #3bb0ff),
+    //(0.5, #3bff52),
+    (0.7, #a03bff),
+    (1.0, #a03bff)
+])
+@Fill()
+
+@DrawCircle(bx + bw * @clamp(sentiment, 0.0, 1.0), by + bh / 2, 7)
+@SetColor(#ffffff)
 @Fill()
 
 if attachment {
@@ -98,3 +129,10 @@ pub const CANVAS_OPTIONS: CanvasOptions = CanvasOptions {
     array_max_size: 128,
     image_storage_size: 200000000,
 };
+
+pub fn leak<T>(t: T) -> &'static T {
+    Box::leak(Box::new(t))
+}
+
+pub type Transaction<'a> = sqlx::Transaction<'a, sqlx::Postgres>;
+pub type Pool = sqlx::PgPool;

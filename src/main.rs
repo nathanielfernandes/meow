@@ -1,4 +1,8 @@
+#![feature(try_blocks)]
+
+pub mod appstate;
 pub mod commands;
+pub mod db;
 pub mod generate;
 pub mod prelude;
 
@@ -20,6 +24,14 @@ async fn main() {
     let mut opts = EmojiOptions::dir("assets/twemojis");
     opts.parse_discord_emojis = true;
     FontDB::set_default_emoji_options(opts);
+
+    info!(
+        "Loaded {} fonts from assets/fonts ✅",
+        FontDB::inner()
+            .read()
+            .expect("Failed to read font database")
+            .len()
+    );
 
     // setup logging and dotenv
     dotenvy::dotenv().ok();
@@ -53,7 +65,7 @@ async fn main() {
 
                 info!("{} is ready ✅", ready.user.name);
 
-                Ok(())
+                Ok(appstate::AppState::new().await)
             })
         });
 

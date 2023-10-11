@@ -1,6 +1,6 @@
 use poise::Modal;
 
-use crate::{generate::*, prelude::*};
+use crate::{db::sentiment::Sentiment, generate::*, prelude::*};
 
 #[derive(Debug, poise::Modal)]
 pub struct ReplyModal {
@@ -24,9 +24,20 @@ pub async fn reply(
         return Ok(());
     };
 
-    let identifier = random_identifier(5);
+    let identifier = ""; // random_identifier(5);
 
-    let Some(img) = render_text(&data.reply, None, &identifier, "ggsans-bold", None) else {
+    let sentiment = Sentiment::analyze(&data.reply, &ctx.data().client)
+        .await
+        .linear() as f32;
+
+    let Some(img) = render_text(
+        &data.reply,
+        None,
+        &identifier,
+        "ggsans-bold",
+        None,
+        sentiment,
+    ) else {
         return Ok(());
     };
 
@@ -64,7 +75,11 @@ pub async fn meow(
         Some(ctx.author().name.as_str())
     };
 
-    let identifier = random_identifier(5);
+    let identifier = ""; // random_identifier(5);
+
+    let sentiment = Sentiment::analyze(&message, &ctx.data().client)
+        .await
+        .linear() as f32;
 
     let attach = attachment_to_image(&image).await;
     let img = render_text(
@@ -73,6 +88,7 @@ pub async fn meow(
         &identifier,
         font.unwrap_or(Font::Discord).str(),
         attach,
+        sentiment,
     )
     .ok_or(CharmError::MeowError("Failed to render text".to_string()))?;
 

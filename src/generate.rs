@@ -11,9 +11,10 @@ use crate::prelude::{CANVAS_OPTIONS, MEOW_SCRIPT};
 pub fn render_text(
     text: &str,
     signed: Option<&str>,
-    identifier: &str,
+    _identifier: &str,
     font: &str,
     attach: Option<RgbaImage>,
+    sentiment: f32,
 ) -> Option<RgbaImage> {
     let (text, emojis) = imagetext::emoji::parse::parse_out_emojis(&text, true, true);
 
@@ -35,6 +36,7 @@ pub fn render_text(
     h = h + 50 + 20;
 
     if h < 30 {
+        error!("Height is less than 30");
         return None;
     }
 
@@ -45,10 +47,13 @@ pub fn render_text(
     let mut img = RgbaImage::new(w as u32, h as u32);
 
     let Ok(mut canvas) = Canvas::new(MEOW_SCRIPT.clone(), &mut img, CANVAS_OPTIONS) else {
+        error!("Failed to create canvas");
         return None;
     };
 
     canvas.add_variable("attachment", attach.is_some());
+    canvas.add_variable("sentiment", sentiment);
+
     if let Some(attach) = &attach {
         canvas.add_image("image", attach);
     }
@@ -76,6 +81,7 @@ pub fn render_text(
         1.0,
         TextAlign::Left,
     ) {
+        error!("Failed to draw text");
         return None;
     }
 
@@ -116,10 +122,26 @@ pub fn render_text(
         scale(17.0),
         &font,
         DefaultEmojiResolver::<false>,
-        identifier,
+        "😇                                    😈",
     ) {
         return None;
     }
+
+    // if let Err(_) = draw_text_anchored_with_emojis(
+    //     &mut img,
+    //     &imagetext::drawing::paint::WHITE,
+    //     Outline::None,
+    //     w as f32 - 3.0,
+    //     h as f32 - 3.0,
+    //     1.0,
+    //     1.0,
+    //     scale(17.0),
+    //     &font,
+    //     DefaultEmojiResolver::<false>,
+    //     identifier,
+    // ) {
+    //     return None;
+    // }
 
     Some(img)
 }
