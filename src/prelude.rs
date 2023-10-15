@@ -51,6 +51,22 @@ pub static BOT_ID: Lazy<serenity::UserId> = Lazy::new(|| {
         .into()
 });
 
+pub const CANVAS_OPTIONS: CanvasOptions = CanvasOptions {
+    max_runtime: std::time::Duration::MAX,
+    stack_size: 32,
+    call_stack_size: 16,
+    string_max_size: 128,
+    array_max_size: 128,
+    image_storage_size: 200000000,
+};
+
+pub fn leak<T>(t: T) -> &'static T {
+    Box::leak(Box::new(t))
+}
+
+pub type Transaction<'a> = sqlx::Transaction<'a, sqlx::Postgres>;
+pub type Pool = sqlx::PgPool;
+
 const MEOW: &'static str = r#"
 let w, h = @Dimensions()
 let bottom_lip = 26
@@ -121,18 +137,73 @@ pub const MEOW_SCRIPT: Lazy<Script> = Lazy::new(|| {
     script
 });
 
-pub const CANVAS_OPTIONS: CanvasOptions = CanvasOptions {
-    max_runtime: std::time::Duration::MAX,
-    stack_size: 32,
-    call_stack_size: 16,
-    string_max_size: 128,
-    array_max_size: 128,
-    image_storage_size: 200000000,
-};
+const POLL: &'static str = r#"
+let w, h = @Dimensions()
+let bottom_lip = 26
 
-pub fn leak<T>(t: T) -> &'static T {
-    Box::leak(Box::new(t))
+let bgcolor = #1f1f1f
+let fgcolor = #2e2e2e
+
+@DrawRoundedRectangle(0,0 * 2, w, h, 10)
+@SetColor(bgcolor)
+@Fill()
+
+@DrawRoundedRectangle(5, 5, w - 10, h - bottom_lip, 5)
+@SetColor(fgcolor)
+@Fill()
+
+let fontsize = 30
+let pad = 20
+let bh = 20
+let x = pad
+let y = offset + pad
+let r = 4
+
+@SetFont("ggsans-semibold notojp notosc nototc notob")
+@SetFontSize(fontsize)
+
+let i = 1
+for name, _ in choices {
+    @DrawString(@truncate(name, 45, "..."), x, y)
+    y += fontsize * 2
+    i += 1
 }
 
-pub type Transaction<'a> = sqlx::Transaction<'a, sqlx::Postgres>;
-pub type Pool = sqlx::PgPool;
+@SetColor(#fff)
+@Fill()
+
+y = pad + offset
+for _, _ in choices {
+    @DrawRoundedRectangle(x, y + fontsize, w - pad * 2, bh, r)
+    y += fontsize * 2
+}
+
+@SetColor(bgcolor)
+@Fill()
+
+
+y = pad + offset
+for _, votes in choices {
+    let percent = @clamp(@float(votes) / @max(total, 1), 0.0, 1.0)
+    @DrawRoundedRectangle(x, y + fontsize, (w - pad * 2) * percent, bh, r)
+    y += fontsize * 2
+}
+
+
+@SetLinearGradient((0.0, 0.0), (w, h), "pad", [
+    (0.0, #ba71ff),
+    (1.0, #494cff),
+])
+@Fill()
+"#;
+
+pub const POLL_SCRIPT: Lazy<Script> = Lazy::new(|| {
+    let Ok(script) = canvas::prelude::build_script(
+        "poll",
+        POLL,
+        &mut canvas::prelude::DefaultIncludeResolver::default(),
+    ) else {
+        panic!("Failed to build poll script");
+    };
+    script
+});

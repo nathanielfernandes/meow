@@ -43,7 +43,7 @@ async fn main() {
     let framework = poise::Framework::builder()
         .token(std::env::var("TOKEN").expect("DISCORD_TOKEN not set"))
         .options(poise::FrameworkOptions {
-            commands: vec![reply(), meow()],
+            commands: vec![reply(), meow(), poll()],
             ..Default::default()
         })
         .intents(

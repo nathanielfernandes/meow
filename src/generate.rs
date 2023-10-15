@@ -35,11 +35,6 @@ pub fn render_text(
     w = w.max(256) + 50;
     h = h + 50 + 20;
 
-    if h < 30 {
-        error!("Height is less than 30");
-        return None;
-    }
-
     if attach.is_some() {
         h += 256;
     }
@@ -142,6 +137,113 @@ pub fn render_text(
     // ) {
     //     return None;
     // }
+
+    Some(img)
+}
+
+pub fn render_poll(
+    title: &str,
+    choices: &[(String, i32)],
+    total_votes: i32,
+    signed: Option<&str>,
+) -> Option<RgbaImage> {
+    let (text, emojis) = imagetext::emoji::parse::parse_out_emojis(&title, true, true);
+
+    let font = FontDB::superfont(&["ggsans-semibold", "notojp", "notosc", "nototc"])?;
+
+    let s = scale(30.0);
+    let lines = imagetext::wrap::text_wrap(
+        &text,
+        500,
+        &font,
+        s,
+        WrapStyle::Character,
+        imagetext::measure::text_width_with_emojis,
+    );
+
+    let (mut w, mut h) = parsed_text_size_multiline_with_emojis(&lines, &font, s, 1.0);
+
+    let text_h = h + 20;
+
+    w = w.max(400) + 50;
+    h = h + 50 + 20 + (choices.len() * 60) as i32;
+
+    let mut img = RgbaImage::new(w as u32, h as u32);
+
+    let Ok(mut canvas) = Canvas::new(POLL_SCRIPT.clone(), &mut img, CANVAS_OPTIONS) else {
+        error!("Failed to create canvas");
+        return None;
+    };
+
+    let choices = choices
+        .iter()
+        .cloned()
+        .map(|c| c.into())
+        .collect::<Vec<Value>>();
+    canvas.add_variable("choices", Value::Array(Vecc::force_new(choices).into()));
+    canvas.add_variable("total", total_votes);
+    canvas.add_variable("offset", text_h);
+
+    if let Err(e) = canvas.run() {
+        error!("Failed to run canvas: {}", e.0);
+        return None;
+    }
+
+    if let Err(_) = draw_parsed_text_multiline_with_emojis(
+        &mut img,
+        &imagetext::drawing::paint::WHITE,
+        Outline::None,
+        25.0,
+        25.0,
+        0.0,
+        0.0,
+        500.0,
+        s,
+        &font,
+        DefaultEmojiResolver::<true>,
+        &lines,
+        &emojis,
+        &mut 0,
+        1.0,
+        TextAlign::Left,
+    ) {
+        error!("Failed to draw text");
+        return None;
+    }
+
+    if let Some(sign) = signed {
+        let _ = draw_text_anchored(
+            &mut img,
+            &imagetext::drawing::paint::WHITE,
+            Outline::None,
+            6.0,
+            h as f32 - 6.0,
+            0.0,
+            1.0,
+            scale(17.0),
+            &font,
+            sign,
+        );
+    }
+
+    if let Err(_) = draw_text_anchored(
+        &mut img,
+        &imagetext::drawing::paint::WHITE,
+        Outline::None,
+        w as f32 - 6.0,
+        h as f32 - 6.0,
+        1.0,
+        1.0,
+        scale(17.0),
+        &font,
+        &format!(
+            "{} vote{}",
+            total_votes,
+            if total_votes == 1 { "" } else { "s" }
+        ),
+    ) {
+        return None;
+    }
 
     Some(img)
 }

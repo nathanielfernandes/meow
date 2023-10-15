@@ -2,8 +2,6 @@ use reqwest::Client;
 
 use crate::prelude::leak;
 
-// use crate::prelude::Pool;
-
 #[derive(Clone)]
 pub struct AppState {
     pub client: Client,
@@ -19,9 +17,6 @@ impl AppState {
 
         let client = Client::new();
 
-        leak(Self {
-            client,
-            // pool
-        })
+        leak(Self { client, /* pool */ })
     }
 }
