@@ -14,7 +14,7 @@ pub fn render_text(
     _identifier: &str,
     font: &str,
     attach: Option<RgbaImage>,
-    sentiment: f32,
+    _sentiment: f32,
 ) -> Option<RgbaImage> {
     let (text, emojis) = imagetext::emoji::parse::parse_out_emojis(&text, true, true);
 
@@ -32,8 +32,8 @@ pub fn render_text(
 
     let (mut w, mut h) = parsed_text_size_multiline_with_emojis(&lines, &font, s, 1.0);
 
-    w = w.max(256) + 50;
-    h = h + 50 + 20;
+    w = w.max(256) + 50 + 10;
+    h = h + 50 + 20 + 10;
 
     if attach.is_some() {
         h += 256;
@@ -46,8 +46,14 @@ pub fn render_text(
         return None;
     };
 
+    let snow = SNOW_IMAGE;
+    canvas.add_image("snow", &snow);
+
+    let santa = SANTA_HAT_IMAGE;
+    canvas.add_image("santa", &santa);
+
     canvas.add_variable("attachment", attach.is_some());
-    canvas.add_variable("sentiment", sentiment);
+    // canvas.add_variable("sentiment", sentiment);
 
     if let Some(attach) = &attach {
         canvas.add_image("image", attach);
@@ -63,7 +69,7 @@ pub fn render_text(
         &imagetext::drawing::paint::WHITE,
         Outline::None,
         25.0,
-        25.0,
+        25.0 + 10.0,
         0.0,
         0.0,
         500.0,
@@ -95,32 +101,32 @@ pub fn render_text(
         );
     }
 
-    let Some(font) = FontDB::query_with_emoji(
-        "ggsans-bold",
-        EmojiOptions {
-            parse_shortcodes: false,
-            source: EmojiSource::Apple,
-            ..Default::default()
-        },
-    ) else {
-        return Some(img);
-    };
+    // let Some(font) = FontDB::query_with_emoji(
+    //     "ggsans-bold",
+    //     EmojiOptions {
+    //         parse_shortcodes: false,
+    //         source: EmojiSource::Apple,
+    //         ..Default::default()
+    //     },
+    // ) else {
+    //     return Some(img);
+    // };
 
-    if let Err(_) = draw_text_anchored_with_emojis(
-        &mut img,
-        &imagetext::drawing::paint::WHITE,
-        Outline::None,
-        w as f32 - 3.0,
-        h as f32 - 3.0,
-        1.0,
-        1.0,
-        scale(17.0),
-        &font,
-        DefaultEmojiResolver::<false>,
-        "😇                                    😈",
-    ) {
-        return None;
-    }
+    // if let Err(_) = draw_text_anchored_with_emojis(
+    //     &mut img,
+    //     &imagetext::drawing::paint::WHITE,
+    //     Outline::None,
+    //     w as f32 - 3.0,
+    //     h as f32 - 3.0,
+    //     1.0,
+    //     1.0,
+    //     scale(17.0),
+    //     &font,
+    //     DefaultEmojiResolver::<false>,
+    //     "😇                                    😈",
+    // ) {
+    //     return None;
+    // }
 
     // if let Err(_) = draw_text_anchored_with_emojis(
     //     &mut img,

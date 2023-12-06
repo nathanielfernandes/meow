@@ -79,9 +79,11 @@ pub async fn meow(
 
     let identifier = ""; // random_identifier(5);
 
-    let sentiment = Sentiment::analyze(&message, &ctx.data().client)
-        .await
-        .linear() as f32;
+    // let sentiment = Sentiment::analyze(&message, &ctx.data().client)
+    //     .await
+    //     .linear() as f32;
+
+    let sentiment = 0.0;
 
     let attach = attachment_to_image(&image).await;
     let img = render_text(

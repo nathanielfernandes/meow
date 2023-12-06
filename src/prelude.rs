@@ -2,6 +2,7 @@ use canvas::canvas::CanvasOptions;
 use canvas::prelude::Script;
 pub use futures;
 pub use futures::future;
+use image::RgbaImage;
 pub use log::{debug, error, info, trace, warn};
 
 use once_cell::sync::Lazy;
@@ -68,16 +69,23 @@ pub type Transaction<'a> = sqlx::Transaction<'a, sqlx::Postgres>;
 pub type Pool = sqlx::PgPool;
 
 const MEOW: &'static str = r#"
+
 let w, h = @Dimensions()
+
+with @PushRelative(0, 10, w - 10, h - 10) {
+
+let w, h = @Dimensions()
+
+
 let bottom_lip = 26
 
 let bgcolor = #1f1f1f
 let fgcolor = #2e2e2e
 
-if sentiment > 0.9 {
-    bgcolor = #700101
-    fgcolor = #b00b0b
-}
+// if sentiment > 0.9 {
+//     bgcolor = #700101
+//     fgcolor = #b00b0b
+// }
 
 let w, h = @Dimensions()
 let bottom_lip = 26
@@ -88,25 +96,31 @@ let bottom_lip = 26
 
 @DrawRoundedRectangle(5, 5, w - 10, h - bottom_lip, 5)
 @SetColor(fgcolor)
+@FillPreserve()
+
+@Scale(0.5, 0.5)
+@SetPattern(snow, "repeat", 0.4)
+@Identity()
+@SetBlendMode("color_burn")
 @Fill()
+@SetBlendMode("default")
 
+// let bw, bh = (100, 10)
+// let bx, by = (w - bw - 20, h - bh - 6)
+// @DrawRoundedRectangle(bx, by, bw, bh, bh)
 
-let bw, bh = (100, 10)
-let bx, by = (w - bw - 20, h - bh - 6)
-@DrawRoundedRectangle(bx, by, bw, bh, bh)
+// @SetLinearGradient((bx, by), (bx + bw, by + bh), "pad", [
+//     (0.0, #3bb0ff),
+//     (0.2, #3bb0ff),
+//     //(0.5, #3bff52),
+//     (0.7, #a03bff),
+//     (1.0, #a03bff)
+// ])
+// @Fill()
 
-@SetLinearGradient((bx, by), (bx + bw, by + bh), "pad", [
-    (0.0, #3bb0ff),
-    (0.2, #3bb0ff),
-    //(0.5, #3bff52),
-    (0.7, #a03bff),
-    (1.0, #a03bff)
-])
-@Fill()
-
-@DrawCircle(bx + bw * @clamp(sentiment, 0.0, 1.0), by + bh / 2, 7)
-@SetColor(#ffffff)
-@Fill()
+// @DrawCircle(bx + bw * @clamp(sentiment, 0.0, 1.0), by + bh / 2, 7)
+// @SetColor(#ffffff)
+// @Fill()
 
 if attachment {
     let s = 256
@@ -124,6 +138,11 @@ if attachment {
     @ResetClip()
     @DrawImageContained(image, 10, z, w - 20, s)
 }
+
+}
+
+@DrawImageAnchoredSized(santa, w - 18, 0, 0.5, 0.0, 30, 40)
+
 "#;
 
 pub const MEOW_SCRIPT: Lazy<Script> = Lazy::new(|| {
@@ -206,4 +225,16 @@ pub const POLL_SCRIPT: Lazy<Script> = Lazy::new(|| {
         panic!("Failed to build poll script");
     };
     script
+});
+
+pub const SNOW_IMAGE: Lazy<RgbaImage> = Lazy::new(|| {
+    image::open("./assets/images/snow.png")
+        .expect("Failed to load snow image")
+        .to_rgba8()
+});
+
+pub const SANTA_HAT_IMAGE: Lazy<RgbaImage> = Lazy::new(|| {
+    image::open("./assets/images/santa.png")
+        .expect("Failed to load santa image")
+        .to_rgba8()
 });
