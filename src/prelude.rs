@@ -65,14 +65,11 @@ pub fn leak<T>(t: T) -> &'static T {
     Box::leak(Box::new(t))
 }
 
-pub type Transaction<'a> = sqlx::Transaction<'a, sqlx::Postgres>;
-pub type Pool = sqlx::PgPool;
-
 const MEOW: &'static str = r#"
 
 let w, h = @Dimensions()
-
-with @PushRelative(0, 10, w - 10, h - 10) {
+let pr = 0
+with @PushRelative(0, pr, w - pr, h - pr) {
 
 let w, h = @Dimensions()
 
@@ -98,10 +95,10 @@ let bottom_lip = 26
 @SetColor(fgcolor)
 @FillPreserve()
 
-@Scale(0.5, 0.5)
-@SetPattern(snow, "repeat", 0.4)
+@Scale(0.3, 0.3)
+@SetPattern(pattern, "repeat", 0.1)
 @Identity()
-@SetBlendMode("color_burn")
+@SetBlendMode("luminosity")
 @Fill()
 @SetBlendMode("default")
 
@@ -139,9 +136,29 @@ if attachment {
     @DrawImageContained(image, 10, z, w - 20, s)
 }
 
+
+if has_role {
+    @SetFont("ggsans-bold")
+    @DrawString("from:", 6, h - 18.5)
+    @SetColor(#ffffff)
+    @Fill()
+
+    let sx = 38
+    let px = 5
+    let w = @TextWidth(role_name)
+
+    @DrawRoundedRectangle(sx, h - 18.5, w + px*2, 17, 4)
+    @SetColor(@rgba(role_color[0], role_color[1], role_color[2], 0.3))
+    @Fill()
+
+    @DrawString(role_name, sx + px, h - 18.5)
+    @SetColor(role_color)
+    @Fill()
 }
 
-@DrawImageAnchoredSized(santa, w - 18, 0, 0.5, 0.0, 30, 40)
+}
+
+// @DrawImageAnchoredSized(santa, w - 18, 0, 0.5, 0.0, 30, 40)
 
 "#;
 
@@ -227,14 +244,14 @@ pub const POLL_SCRIPT: Lazy<Script> = Lazy::new(|| {
     script
 });
 
-pub const SNOW_IMAGE: Lazy<RgbaImage> = Lazy::new(|| {
-    image::open("./assets/images/snow.png")
-        .expect("Failed to load snow image")
+pub const PATTERN_IMAGE: Lazy<RgbaImage> = Lazy::new(|| {
+    image::open("./assets/images/clouds.png")
+        .expect("Failed to load pattern image")
         .to_rgba8()
 });
 
-pub const SANTA_HAT_IMAGE: Lazy<RgbaImage> = Lazy::new(|| {
-    image::open("./assets/images/santa.png")
-        .expect("Failed to load santa image")
+pub const HAT_IMAGE: Lazy<RgbaImage> = Lazy::new(|| {
+    image::open("./assets/images/hat.png")
+        .expect("Failed to load hat image")
         .to_rgba8()
 });

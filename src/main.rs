@@ -2,9 +2,9 @@
 
 pub mod appstate;
 pub mod commands;
-pub mod db;
 pub mod generate;
 pub mod prelude;
+pub mod utils;
 
 use canvas::prelude::*;
 use prelude::*;

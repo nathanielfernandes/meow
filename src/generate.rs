@@ -11,7 +11,8 @@ use crate::prelude::{CANVAS_OPTIONS, MEOW_SCRIPT};
 pub fn render_text(
     text: &str,
     signed: Option<&str>,
-    _identifier: &str,
+    role_stuff: Option<(String, [u8; 4])>,
+    identifier: &str,
     font: &str,
     attach: Option<RgbaImage>,
     _sentiment: f32,
@@ -46,13 +47,20 @@ pub fn render_text(
         return None;
     };
 
-    let snow = SNOW_IMAGE;
-    canvas.add_image("snow", &snow);
+    let pattern = PATTERN_IMAGE;
+    canvas.add_image("pattern", &pattern);
 
-    let santa = SANTA_HAT_IMAGE;
-    canvas.add_image("santa", &santa);
+    // let hat = HAT_IMAGE;
+    // canvas.add_image("hat", &hat);
 
     canvas.add_variable("attachment", attach.is_some());
+
+    let has_role = role_stuff.is_some();
+    canvas.add_variable("has_role", has_role);
+    if let Some((role_name, role_color)) = role_stuff {
+        canvas.add_variable("role_name", role_name);
+        canvas.add_variable("role_color", role_color);
+    }
     // canvas.add_variable("sentiment", sentiment);
 
     if let Some(attach) = &attach {
@@ -86,19 +94,21 @@ pub fn render_text(
         return None;
     }
 
-    if let Some(sign) = signed {
-        let _ = draw_text_anchored(
-            &mut img,
-            &imagetext::drawing::paint::WHITE,
-            Outline::None,
-            6.0,
-            h as f32 - 6.0,
-            0.0,
-            1.0,
-            scale(17.0),
-            &font,
-            sign,
-        );
+    if !has_role {
+        if let Some(sign) = signed {
+            let _ = draw_text_anchored(
+                &mut img,
+                &imagetext::drawing::paint::WHITE,
+                Outline::None,
+                6.0,
+                h as f32 - 6.0,
+                0.0,
+                1.0,
+                scale(17.0),
+                &font,
+                sign,
+            );
+        }
     }
 
     // let Some(font) = FontDB::query_with_emoji(
@@ -128,21 +138,21 @@ pub fn render_text(
     //     return None;
     // }
 
-    // if let Err(_) = draw_text_anchored_with_emojis(
-    //     &mut img,
-    //     &imagetext::drawing::paint::WHITE,
-    //     Outline::None,
-    //     w as f32 - 3.0,
-    //     h as f32 - 3.0,
-    //     1.0,
-    //     1.0,
-    //     scale(17.0),
-    //     &font,
-    //     DefaultEmojiResolver::<false>,
-    //     identifier,
-    // ) {
-    //     return None;
-    // }
+    if let Err(_) = draw_text_anchored_with_emojis(
+        &mut img,
+        &imagetext::drawing::paint::WHITE,
+        Outline::None,
+        w as f32 - 3.0,
+        h as f32 - 3.0,
+        1.0,
+        1.0,
+        scale(17.0),
+        &font,
+        DefaultEmojiResolver::<false>,
+        identifier,
+    ) {
+        return None;
+    }
 
     Some(img)
 }
@@ -274,20 +284,42 @@ pub async fn attachment_to_image(attachment: &Option<serenity::Attachment>) -> O
     Some(img)
 }
 
-static EMOJIS: [char; 16] = [
-    '😭', '🍆', '🍑', '😔', '💀', '🤓', '🙀', '🥺', '😎', '😅', '🙈', '😠', '🥰', '🥶', '😳', '🤩',
+static EMOJIS: [&str; 21] = [
+    "😭",
+    "🍆",
+    "🍑",
+    "😔",
+    "💀",
+    "🤓",
+    "🙀",
+    "🥺",
+    "😎",
+    "😅",
+    "🙈",
+    "😠",
+    "🥰",
+    "🥶",
+    "😳",
+    "🤩",
+    "❤️‍🔥",
+    "🧍‍♀️",
+    "☕",
+    "🦧",
+    "🧍‍♂️",
 ];
 
 pub fn random_identifier(len: usize) -> String {
     // pick unique numbers from 0..16
     let mut rng = rand::thread_rng();
-    let mut choices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    let mut choices = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    ];
     choices.shuffle(&mut rng);
 
     let mut identifier = String::with_capacity(len);
 
     for i in 0..len {
-        identifier.push(EMOJIS[choices[i]]);
+        identifier.push_str(EMOJIS[choices[i]]);
     }
 
     identifier

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use poise::Modal;
 
-use crate::{db::sentiment::Sentiment, generate::*, prelude::*};
+use crate::{generate::*, prelude::*, utils::sentiment::Sentiment};
 
 #[derive(Debug, poise::Modal)]
 pub struct ReplyModal {
@@ -35,6 +35,7 @@ pub async fn reply(
     let Some(img) = render_text(
         &data.reply,
         None,
+        None,
         &identifier,
         "ggsans-bold",
         None,
@@ -60,6 +61,7 @@ pub async fn meow(
     #[description = "message"] message: String,
     #[description = "image"] image: Option<serenity::Attachment>,
     #[description = "anonymous"] anonymous: Option<bool>,
+    #[description = "role"] role: Option<serenity::Role>,
     #[description = "font name"] font: Option<Font>,
 ) -> CommandResult {
     let msg = ctx
@@ -77,7 +79,33 @@ pub async fn meow(
         Some(ctx.author().name.as_str())
     };
 
-    let identifier = ""; // random_identifier(5);
+    let role_stuff = match role {
+        Some(role) => {
+            let guild = role.guild_id;
+            if !ctx
+                .author()
+                .has_role(ctx.serenity_context(), guild, role.id)
+                .await?
+            {
+                return Err(CharmError::MeowError(
+                    "You don't have the required role".to_string(),
+                ));
+            }
+
+            let role_mention = format!("@{}", role.name);
+            let role_color: u32 = role.colour.0;
+            let role_color: [u8; 4] = [
+                ((role_color >> 16) & 0xFF) as u8,
+                ((role_color >> 8) & 0xFF) as u8,
+                (role_color & 0xFF) as u8,
+                255,
+            ];
+            Some((role_mention, role_color))
+        }
+        None => None,
+    };
+
+    let identifier = random_identifier(5);
 
     // let sentiment = Sentiment::analyze(&message, &ctx.data().client)
     //     .await
@@ -89,6 +117,7 @@ pub async fn meow(
     let img = render_text(
         &message,
         signed,
+        role_stuff,
         &identifier,
         font.unwrap_or(Font::Discord).str(),
         attach,
