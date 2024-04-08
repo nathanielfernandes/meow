@@ -26,6 +26,13 @@ pub async fn reply(
         return Ok(());
     };
 
+    info!(
+        "{}#{} sent: {}",
+        ctx.author().name,
+        ctx.author().discriminator,
+        data.reply
+    );
+
     let identifier = ""; // random_identifier(5);
 
     let sentiment = Sentiment::analyze(&data.reply, &ctx.data().client)
@@ -62,7 +69,6 @@ pub async fn meow(
     #[description = "image"] image: Option<serenity::Attachment>,
     #[description = "anonymous"] anonymous: Option<bool>,
     #[description = "role"] role: Option<serenity::Role>,
-    #[description = "font name"] font: Option<Font>,
 ) -> CommandResult {
     let msg = ctx
         .send(|reply| {
@@ -105,25 +111,9 @@ pub async fn meow(
         None => None,
     };
 
-    let identifier = random_identifier(5);
-
-    // let sentiment = Sentiment::analyze(&message, &ctx.data().client)
-    //     .await
-    //     .linear() as f32;
-
-    let sentiment = 0.0;
-
     let attach = attachment_to_image(&image).await;
-    let img = render_text(
-        &message,
-        signed,
-        role_stuff,
-        &identifier,
-        font.unwrap_or(Font::Discord).str(),
-        attach,
-        sentiment,
-    )
-    .ok_or(CharmError::MeowError("Failed to render text".to_string()))?;
+    let img = render(&message, signed, role_stuff, attach)
+        .ok_or(CharmError::MeowError("Failed to render text".to_string()))?;
 
     let attachment = attachment(&img)?;
 

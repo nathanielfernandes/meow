@@ -65,102 +65,7 @@ pub fn leak<T>(t: T) -> &'static T {
     Box::leak(Box::new(t))
 }
 
-const MEOW: &'static str = r#"
-
-let w, h = @Dimensions()
-let pr = 0
-with @PushRelative(0, pr, w - pr, h - pr) {
-
-let w, h = @Dimensions()
-
-
-let bottom_lip = 26
-
-let bgcolor = #1f1f1f
-let fgcolor = #2e2e2e
-
-// if sentiment > 0.9 {
-//     bgcolor = #700101
-//     fgcolor = #b00b0b
-// }
-
-let w, h = @Dimensions()
-let bottom_lip = 26
-
-@DrawRoundedRectangle(0,0 * 2, w, h, 10)
-@SetColor(bgcolor)
-@Fill()
-
-@DrawRoundedRectangle(5, 5, w - 10, h - bottom_lip, 5)
-@SetColor(fgcolor)
-@FillPreserve()
-
-@Scale(0.3, 0.3)
-@SetPattern(pattern, "repeat", 0.1)
-@Identity()
-@SetBlendMode("luminosity")
-@Fill()
-@SetBlendMode("default")
-
-// let bw, bh = (100, 10)
-// let bx, by = (w - bw - 20, h - bh - 6)
-// @DrawRoundedRectangle(bx, by, bw, bh, bh)
-
-// @SetLinearGradient((bx, by), (bx + bw, by + bh), "pad", [
-//     (0.0, #3bb0ff),
-//     (0.2, #3bb0ff),
-//     //(0.5, #3bff52),
-//     (0.7, #a03bff),
-//     (1.0, #a03bff)
-// ])
-// @Fill()
-
-// @DrawCircle(bx + bw * @clamp(sentiment, 0.0, 1.0), by + bh / 2, 7)
-// @SetColor(#ffffff)
-// @Fill()
-
-if attachment {
-    let s = 256
-    let z = h - s - bottom_lip
-    @DrawRoundedRectangle(10, z, w - 20, s, 5)
-    @ClipPreserve()
-    
-    @SetFilter("good")
-    let img = @Blur(image, 20.0)
-    @DrawImageCovered(img, 0, z, w, s)
-    
-    @SetColor(#00000056)
-    @Fill()
-
-    @ResetClip()
-    @DrawImageContained(image, 10, z, w - 20, s)
-}
-
-
-if has_role {
-    @SetFont("ggsans-bold")
-    @DrawString("from:", 6, h - 18.5)
-    @SetColor(#ffffff)
-    @Fill()
-
-    let sx = 38
-    let px = 5
-    let w = @TextWidth(role_name)
-
-    @DrawRoundedRectangle(sx, h - 18.5, w + px*2, 17, 4)
-    @SetColor(@rgba(role_color[0], role_color[1], role_color[2], 0.3))
-    @Fill()
-
-    @DrawString(role_name, sx + px, h - 18.5)
-    @SetColor(role_color)
-    @Fill()
-}
-
-}
-
-// @DrawImageAnchoredSized(santa, w - 18, 0, 0.5, 0.0, 30, 40)
-
-"#;
+const MEOW: &'static str = include_str!("./scripts/meow.ql");
 
 pub const MEOW_SCRIPT: Lazy<Script> = Lazy::new(|| {
     let Ok(script) = canvas::prelude::build_script(
@@ -245,7 +150,7 @@ pub const POLL_SCRIPT: Lazy<Script> = Lazy::new(|| {
 });
 
 pub const PATTERN_IMAGE: Lazy<RgbaImage> = Lazy::new(|| {
-    image::open("./assets/images/clouds.png")
+    image::open("./assets/images/clouds.jpg")
         .expect("Failed to load pattern image")
         .to_rgba8()
 });

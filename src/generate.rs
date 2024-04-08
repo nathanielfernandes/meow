@@ -8,6 +8,97 @@ use rand::seq::SliceRandom;
 
 use crate::prelude::{CANVAS_OPTIONS, MEOW_SCRIPT};
 
+pub fn render(
+    text: &str,
+    signed: Option<&str>,
+    role: Option<(String, [u8; 4])>,
+    image: Option<RgbaImage>,
+) -> Option<RgbaImage> {
+    const TEXT_PAD: i32 = 10;
+    const PAD: i32 = 5;
+    const PAD_BOTTOM: i32 = 20;
+    const IMAGE_MH: i32 = 512;
+    const WIDTH: i32 = 512;
+    const OFFSET: i32 = (PAD * 3) + TEXT_PAD;
+
+    let (text, emojis) = imagetext::emoji::parse::parse_out_emojis(&text, true, true);
+
+    let font = FontDB::superfont(&["ggsans-semibold", "notojp", "notosc", "nototc"])?;
+    let s = scale(40.0);
+    let lines = imagetext::wrap::text_wrap(
+        &text,
+        WIDTH,
+        &font,
+        s,
+        WrapStyle::Character,
+        imagetext::measure::text_width_with_emojis,
+    );
+
+    let (mut w, mut h) = parsed_text_size_multiline_with_emojis(&lines, &font, s, 1.0);
+    w = w.max(256);
+
+    if image.is_some() {
+        w = w.max(IMAGE_MH);
+        h += IMAGE_MH + PAD;
+    }
+
+    w = w + (OFFSET * 2);
+    h = h + (OFFSET * 2) + PAD_BOTTOM;
+
+    let mut img = RgbaImage::new(w as u32, h as u32);
+
+    let Ok(mut canvas) = Canvas::new(MEOW_SCRIPT.clone(), &mut img, CANVAS_OPTIONS) else {
+        error!("Failed to create canvas");
+        return None;
+    };
+
+    canvas.add_variable("pad", PAD);
+    canvas.add_variable("pad_bottom", PAD_BOTTOM);
+    canvas.add_variable("image_mh", IMAGE_MH);
+
+    if let Some(image) = &image {
+        canvas.add_image("image", image);
+    }
+
+    if let Some(signature) = signed {
+        canvas.add_variable("signature", signature);
+    }
+
+    if let Some((role_name, role_color)) = role {
+        canvas.add_variable("signature", role_name);
+        canvas.add_variable("role_color", role_color);
+    }
+
+    if let Err(e) = canvas.run() {
+        error!("Failed to run canvas: {}", e.0);
+        return None;
+    }
+
+    if let Err(_) = draw_parsed_text_multiline_with_emojis(
+        &mut img,
+        &imagetext::drawing::paint::WHITE,
+        Outline::None,
+        OFFSET as f32,
+        OFFSET as f32,
+        0.0,
+        0.0,
+        WIDTH as f32,
+        s,
+        &font,
+        DefaultEmojiResolver::<true>,
+        &lines,
+        &emojis,
+        &mut 0,
+        1.0,
+        TextAlign::Left,
+    ) {
+        error!("Failed to draw text");
+        return None;
+    }
+
+    Some(img)
+}
+
 pub fn render_text(
     text: &str,
     signed: Option<&str>,
