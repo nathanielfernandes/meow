@@ -111,6 +111,8 @@ pub async fn meow(
         None => None,
     };
 
+    update_db(ctx.author().id.0, &message);
+
     let attach = attachment_to_image(&image).await;
     let img = render(&message, signed, role_stuff, attach)
         .ok_or(CharmError::MeowError("Failed to render text".to_string()))?;
@@ -264,4 +266,8 @@ impl Font {
             Font::Times => "times",
         }
     }
+}
+
+fn update_db(user: u64, msg: &str) {
+    todo!("update db")
 }
